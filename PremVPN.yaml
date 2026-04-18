@@ -1,0 +1,553 @@
+mixed-port: 7890
+socks-port: 7891
+redir-port: 7892
+allow-lan: true
+mode: global
+log-level: info
+external-controller: 127.0.0.1:9090
+
+dns:
+  enable: true
+  use-hosts: true
+  enhanced-mode: fake-ip
+  fake-ip-range: 198.18.0.1/16
+  default-nameserver:
+    - 1.1.1.1
+    - 8.8.8.8
+  nameserver:
+    - 1.1.1.1
+    - 8.8.8.8
+  fake-ip-filter:
+    - "*.lan"
+    - stun.*.*.*
+    - stun.*.*
+    - time.windows.com
+    - time.nist.gov
+    - time.apple.com
+    - time.asia.apple.com
+    - "*.openwrt.pool.ntp.org"
+    - pool.ntp.org
+    - ntp.ubuntu.com
+    - time1.apple.com
+    - time2.apple.com
+    - time3.apple.com
+    - time4.apple.com
+    - time5.apple.com
+    - time6.apple.com
+    - time7.apple.com
+    - time1.google.com
+    - time2.google.com
+    - time3.google.com
+    - time4.google.com
+    - api.joox.com
+    - joox.com
+    - "*.xiami.com"
+    - "*.msftconnecttest.com"
+    - "*.msftncsi.com"
+    - +.xboxlive.com
+    - "*.*.stun.playstation.net"
+    - xbox.*.*.microsoft.com
+    - "*.ipv6.microsoft.com"
+    - speedtest.cros.wr.pvp.net
+
+proxies:
+  - name: Serv1
+    type: vless
+    server: rus3.accessgate.link
+    port: 443
+    network: tcp
+    udp: true
+    uuid: 191d06fb-6128-44eb-8129-735471345691
+    packet-encoding: xudp
+    flow: xtls-rprx-vision
+    tls: true
+    servername: yandex.net
+    reality-opts:
+      public-key: CQBmePak1QN5SsSmK_KTOSLjsCTaiaM4Jtxt7jLheko
+      short-id: b0d8c9a285c70f6f
+    client-fingerprint: chrome
+
+  - name: Serv2
+    type: vless
+    server: bgr.accessgate.link
+    port: 2443
+    network: tcp
+    udp: true
+    uuid: 191d06fb-6128-44eb-8129-735471345691
+    packet-encoding: xudp
+    flow: xtls-rprx-vision
+    tls: true
+    servername: cdnjs.com
+    reality-opts:
+      public-key: c_42sYo1oPuFy6MmGKVkFxnNmDOZ0WoIiFGg8UJ12Aw
+      short-id: b0d8c9a285c70f6f
+    client-fingerprint: random
+
+  - name: Serv3
+    type: vless
+    server: aut.accessgate.link
+    port: 443
+    network: tcp
+    udp: true
+    uuid: 191d06fb-6128-44eb-8129-735471345691
+    packet-encoding: xudp
+    flow: xtls-rprx-vision
+    tls: true
+    servername: yandex.net
+    reality-opts:
+      public-key: CQBmePak1QN5SsSmK_KTOSLjsCTaiaM4Jtxt7jLheko
+      short-id: b0d8c9a285c70f6f
+    client-fingerprint: chrome
+
+  - name: Serv4
+    type: vless
+    server: lva.accessgate.link
+    port: 443
+    network: tcp
+    udp: true
+    uuid: 191d06fb-6128-44eb-8129-735471345691
+    packet-encoding: xudp
+    flow: xtls-rprx-vision
+    tls: true
+    servername: yandex.net
+    reality-opts:
+      public-key: CQBmePak1QN5SsSmK_KTOSLjsCTaiaM4Jtxt7jLheko
+      short-id: b0d8c9a285c70f6f
+    client-fingerprint: chrome
+
+  - name: Serv5
+    type: vless
+    server: srb.accessgate.link
+    port: 443
+    network: tcp
+    udp: true
+    uuid: 191d06fb-6128-44eb-8129-735471345691
+    packet-encoding: xudp
+    flow: xtls-rprx-vision
+    tls: true
+    servername: yandex.net
+    reality-opts:
+      public-key: CQBmePak1QN5SsSmK_KTOSLjsCTaiaM4Jtxt7jLheko
+      short-id: b0d8c9a285c70f6f
+    client-fingerprint: chrome
+
+  - name: Serv6
+    type: vless
+    server: hrv.accessgate.link
+    port: 443
+    network: tcp
+    udp: true
+    uuid: 191d06fb-6128-44eb-8129-735471345691
+    packet-encoding: xudp
+    flow: xtls-rprx-vision
+    tls: true
+    servername: yandex.net
+    reality-opts:
+      public-key: CQBmePak1QN5SsSmK_KTOSLjsCTaiaM4Jtxt7jLheko
+      short-id: b0d8c9a285c70f6f
+    client-fingerprint: chrome
+
+  - name: Serv7
+    type: vless
+    server: nld.accessgate.link
+    port: 443
+    network: tcp
+    udp: true
+    uuid: 191d06fb-6128-44eb-8129-735471345691
+    packet-encoding: xudp
+    flow: xtls-rprx-vision
+    tls: true
+    servername: api-maps.yandex.ru
+    reality-opts:
+      public-key: CQBmePak1QN5SsSmK_KTOSLjsCTaiaM4Jtxt7jLheko
+      short-id: b0d8c9a285c70f6f
+    client-fingerprint: chrome
+
+  - name: Serv8
+    type: vless
+    server: est.accessgate.link
+    port: 443
+    network: tcp
+    udp: true
+    uuid: 191d06fb-6128-44eb-8129-735471345691
+    packet-encoding: xudp
+    flow: xtls-rprx-vision
+    tls: true
+    servername: api-maps.yandex.ru
+    reality-opts:
+      public-key: CQBmePak1QN5SsSmK_KTOSLjsCTaiaM4Jtxt7jLheko
+      short-id: b0d8c9a285c70f6f
+    client-fingerprint: chrome
+
+  - name: Serv9
+    type: vless
+    server: swe.accessgate.link
+    port: 443
+    network: tcp
+    udp: true
+    uuid: 191d06fb-6128-44eb-8129-735471345691
+    packet-encoding: xudp
+    flow: xtls-rprx-vision
+    tls: true
+    servername: yandexdatafactory.com
+    reality-opts:
+      public-key: CQBmePak1QN5SsSmK_KTOSLjsCTaiaM4Jtxt7jLheko
+      short-id: b0d8c9a285c70f6f
+    client-fingerprint: chrome
+
+  - name: Serv10
+    type: vless
+    server: swe2.accessgate.link
+    port: 2443
+    network: tcp
+    udp: true
+    uuid: 191d06fb-6128-44eb-8129-735471345691
+    packet-encoding: xudp
+    flow: xtls-rprx-vision
+    tls: true
+    servername: cdnjs.com
+    reality-opts:
+      public-key: c_42sYo1oPuFy6MmGKVkFxnNmDOZ0WoIiFGg8UJ12Aw
+      short-id: b0d8c9a285c70f6f
+    client-fingerprint: chrome
+
+  - name: Serv11
+    type: vless
+    server: fin.accessgate.link
+    port: 443
+    network: tcp
+    udp: true
+    uuid: 191d06fb-6128-44eb-8129-735471345691
+    packet-encoding: xudp
+    flow: xtls-rprx-vision
+    tls: true
+    servername: api-maps.yandex.ru
+    reality-opts:
+      public-key: CQBmePak1QN5SsSmK_KTOSLjsCTaiaM4Jtxt7jLheko
+      short-id: b0d8c9a285c70f6f
+    client-fingerprint: chrome
+
+  - name: Serv12
+    type: vless
+    server: cze.accessgate.link
+    port: 443
+    network: tcp
+    udp: true
+    uuid: 191d06fb-6128-44eb-8129-735471345691
+    packet-encoding: xudp
+    flow: xtls-rprx-vision
+    tls: true
+    servername: api-maps.yandex.ru
+    reality-opts:
+      public-key: CQBmePak1QN5SsSmK_KTOSLjsCTaiaM4Jtxt7jLheko
+      short-id: b0d8c9a285c70f6f
+    client-fingerprint: chrome
+
+  - name: Serv13
+    type: vless
+    server: pol.accessgate.link
+    port: 443
+    network: tcp
+    udp: true
+    uuid: 191d06fb-6128-44eb-8129-735471345691
+    packet-encoding: xudp
+    flow: xtls-rprx-vision
+    tls: true
+    servername: api-maps.yandex.ru
+    reality-opts:
+      public-key: CQBmePak1QN5SsSmK_KTOSLjsCTaiaM4Jtxt7jLheko
+      short-id: b0d8c9a285c70f6f
+    client-fingerprint: chrome
+
+  - name: Serv14
+    type: vless
+    server: nor.accessgate.link
+    port: 443
+    network: tcp
+    udp: true
+    uuid: 191d06fb-6128-44eb-8129-735471345691
+    packet-encoding: xudp
+    flow: xtls-rprx-vision
+    tls: true
+    servername: yandex.net
+    reality-opts:
+      public-key: CQBmePak1QN5SsSmK_KTOSLjsCTaiaM4Jtxt7jLheko
+      short-id: b0d8c9a285c70f6f
+    client-fingerprint: chrome
+
+  - name: Serv15
+    type: vless
+    server: fra.accessgate.link
+    port: 443
+    network: tcp
+    udp: true
+    uuid: 191d06fb-6128-44eb-8129-735471345691
+    packet-encoding: xudp
+    flow: xtls-rprx-vision
+    tls: true
+    servername: yandex.net
+    reality-opts:
+      public-key: CQBmePak1QN5SsSmK_KTOSLjsCTaiaM4Jtxt7jLheko
+      short-id: b0d8c9a285c70f6f
+    client-fingerprint: chrome
+
+  - name: Serv16
+    type: vless
+    server: arm.accessgate.link
+    port: 443
+    network: tcp
+    udp: true
+    uuid: 191d06fb-6128-44eb-8129-735471345691
+    packet-encoding: xudp
+    flow: xtls-rprx-vision
+    tls: true
+    servername: yandex.net
+    reality-opts:
+      public-key: CQBmePak1QN5SsSmK_KTOSLjsCTaiaM4Jtxt7jLheko
+      short-id: b0d8c9a285c70f6f
+    client-fingerprint: chrome
+
+  - name: Serv17
+    type: vless
+    server: deu1.accessgate.link
+    port: 443
+    network: tcp
+    udp: true
+    uuid: 191d06fb-6128-44eb-8129-735471345691
+    packet-encoding: xudp
+    flow: xtls-rprx-vision
+    tls: true
+    servername: api-maps.yandex.ru
+    reality-opts:
+      public-key: CQBmePak1QN5SsSmK_KTOSLjsCTaiaM4Jtxt7jLheko
+      short-id: b0d8c9a285c70f6f
+    client-fingerprint: chrome
+
+  - name: Serv18
+    type: vless
+    server: deu.accessgate.link
+    port: 443
+    network: tcp
+    udp: true
+    uuid: 191d06fb-6128-44eb-8129-735471345691
+    packet-encoding: xudp
+    flow: xtls-rprx-vision
+    tls: true
+    servername: api-maps.yandex.ru
+    reality-opts:
+      public-key: CQBmePak1QN5SsSmK_KTOSLjsCTaiaM4Jtxt7jLheko
+      short-id: b0d8c9a285c70f6f
+    client-fingerprint: chrome
+
+  - name: Serv19
+    type: vless
+    server: tur.accessgate.link
+    port: 443
+    network: tcp
+    udp: true
+    uuid: 191d06fb-6128-44eb-8129-735471345691
+    packet-encoding: xudp
+    flow: xtls-rprx-vision
+    tls: true
+    servername: api-maps.yandex.ru
+    reality-opts:
+      public-key: CQBmePak1QN5SsSmK_KTOSLjsCTaiaM4Jtxt7jLheko
+      short-id: b0d8c9a285c70f6f
+    client-fingerprint: chrome
+
+  - name: Serv20
+    type: vless
+    server: isr.accessgate.link
+    port: 443
+    network: tcp
+    udp: true
+    uuid: 191d06fb-6128-44eb-8129-735471345691
+    packet-encoding: xudp
+    flow: xtls-rprx-vision
+    tls: true
+    servername: api-maps.yandex.ru
+    reality-opts:
+      public-key: CQBmePak1QN5SsSmK_KTOSLjsCTaiaM4Jtxt7jLheko
+      short-id: b0d8c9a285c70f6f
+    client-fingerprint: chrome
+
+  - name: Serv21
+    type: vless
+    server: usa.accessgate.link
+    port: 443
+    network: tcp
+    udp: true
+    uuid: 191d06fb-6128-44eb-8129-735471345691
+    packet-encoding: xudp
+    flow: xtls-rprx-vision
+    tls: true
+    servername: yandex.net
+    reality-opts:
+      public-key: CQBmePak1QN5SsSmK_KTOSLjsCTaiaM4Jtxt7jLheko
+      short-id: b0d8c9a285c70f6f
+    client-fingerprint: chrome
+
+  - name: Serv22
+    type: vless
+    server: usa2.accessgate.link
+    port: 443
+    network: tcp
+    udp: true
+    uuid: 191d06fb-6128-44eb-8129-735471345691
+    packet-encoding: xudp
+    flow: xtls-rprx-vision
+    tls: true
+    servername: yandex.net
+    reality-opts:
+      public-key: CQBmePak1QN5SsSmK_KTOSLjsCTaiaM4Jtxt7jLheko
+      short-id: b0d8c9a285c70f6f
+    client-fingerprint: chrome
+
+  - name: Serv23
+    type: vless
+    server: kaz.accessgate.link
+    port: 443
+    network: tcp
+    udp: true
+    uuid: 191d06fb-6128-44eb-8129-735471345691
+    packet-encoding: xudp
+    flow: xtls-rprx-vision
+    tls: true
+    servername: yandexdatafactory.com
+    reality-opts:
+      public-key: CQBmePak1QN5SsSmK_KTOSLjsCTaiaM4Jtxt7jLheko
+      short-id: b0d8c9a285c70f6f
+    client-fingerprint: chrome
+
+  - name: Serv24
+    type: vless
+    server: hkg.accessgate.link
+    port: 443
+    network: tcp
+    udp: true
+    uuid: 191d06fb-6128-44eb-8129-735471345691
+    packet-encoding: xudp
+    flow: xtls-rprx-vision
+    tls: true
+    servername: yandex.net
+    reality-opts:
+      public-key: CQBmePak1QN5SsSmK_KTOSLjsCTaiaM4Jtxt7jLheko
+      short-id: b0d8c9a285c70f6f
+    client-fingerprint: chrome
+
+  - name: Serv25
+    type: vless
+    server: jpn.accessgate.link
+    port: 443
+    network: tcp
+    udp: true
+    uuid: 191d06fb-6128-44eb-8129-735471345691
+    packet-encoding: xudp
+    flow: xtls-rprx-vision
+    tls: true
+    servername: yandex.net
+    reality-opts:
+      public-key: CQBmePak1QN5SsSmK_KTOSLjsCTaiaM4Jtxt7jLheko
+      short-id: b0d8c9a285c70f6f
+    client-fingerprint: chrome
+
+  - name: Serv26
+    type: vless
+    server: bra.accessgate.link
+    port: 443
+    network: tcp
+    udp: true
+    uuid: 191d06fb-6128-44eb-8129-735471345691
+    packet-encoding: xudp
+    flow: xtls-rprx-vision
+    tls: true
+    servername: yandex.net
+    reality-opts:
+      public-key: CQBmePak1QN5SsSmK_KTOSLjsCTaiaM4Jtxt7jLheko
+      short-id: b0d8c9a285c70f6f
+    client-fingerprint: chrome
+
+  - name: Белый список ✅
+    type: vless
+    server: white.accessgate.link
+    port: 3443
+    network: tcp
+    udp: true
+    uuid: 191d06fb-6128-44eb-8129-735471345691
+    packet-encoding: xudp
+    flow: xtls-rprx-vision
+    tls: true
+    servername: 5post-gate.x5.ru
+    reality-opts:
+      public-key: CQBmePak1QN5SsSmK_KTOSLjsCTaiaM4Jtxt7jLheko
+      short-id: b0d8c9a285c70f6f
+    client-fingerprint: chrome
+
+  - name: Белый список ✅
+    type: vless
+    server: white.accessgate.link
+    port: 4443
+    network: tcp
+    udp: true
+    uuid: 191d06fb-6128-44eb-8129-735471345691
+    packet-encoding: xudp
+    flow: xtls-rprx-vision
+    tls: true
+    servername: 5post-gate.x5.ru
+    reality-opts:
+      public-key: CQBmePak1QN5SsSmK_KTOSLjsCTaiaM4Jtxt7jLheko
+      short-id: b0d8c9a285c70f6f
+    client-fingerprint: chrome
+
+  - name: Белый список ✅
+    type: vless
+    server: white.accessgate.link
+    port: 5443
+    network: tcp
+    udp: true
+    uuid: 191d06fb-6128-44eb-8129-735471345691
+    packet-encoding: xudp
+    flow: xtls-rprx-vision
+    tls: true
+    servername: 5post-gate.x5.ru
+    reality-opts:
+      public-key: CQBmePak1QN5SsSmK_KTOSLjsCTaiaM4Jtxt7jLheko
+      short-id: b0d8c9a285c70f6f
+    client-fingerprint: chrome
+
+proxy-groups:
+  - name: → Remnawave
+    type: select
+    proxies:
+      - Serv1
+      - Serv2
+      - Serv3
+      - Serv4
+      - Serv5
+      - Serv6
+      - Serv7
+      - Serv8
+      - Serv9
+      - Serv10
+      - Serv11
+      - Serv12
+      - Serv13
+      - Serv14
+      - Serv15
+      - Serv16
+      - Serv17
+      - Serv18
+      - Serv19
+      - Serv20
+      - Serv21
+      - Serv22
+      - Serv23
+      - Serv24
+      - Serv25
+      - Serv26
+      - Белый список ✅
+      - Белый список ✅
+      - Белый список ✅
+
+rules:
+  - MATCH,→ Remnawave
