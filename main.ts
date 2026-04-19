@@ -7,7 +7,7 @@
 // - Минимальное потребление ресурсов Deno Deploy
 // ==================================================================
 
-const BACKUP_URL = "https://raw.githubusercontent.com/PremVPN/PremVPN/refs/heads/main/Karing_1.2.16.backup.zip";
+const BACKUP_URL = "https://raw.githubusercontent.com/PremVPN/PremVPN/raw/refs/heads/main/Karing_1.2.16.zip";
 
 const CONFIG = {
   BRAND_NAME: "PremVPN",
