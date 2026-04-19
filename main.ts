@@ -1,3 +1,71 @@
+// ==================================================================
+// 🔥 PREMVPN — ОПТИМИЗИРОВАННЫЙ КОД (ПОРЯДОК ИСПРАВЛЕН)
+// ==================================================================
+
+const BACKUP_URL = "https://raw.githubusercontent.com/PremVPN/PremVPN/refs/heads/main/Karing_1.2.16.backup.zip";
+
+// 1. СНАЧАЛА ОБЪЯВЛЯЕМ CONFIG
+const CONFIG = {
+  maxDevicesPerToken: 2,
+  tokenCooldownMinutes: 60,
+  trafficLimitGB: 100,
+  ADMIN_PASSWORD: "admin123", // ПОМЕНЯЙ!
+  maxRequestsPerToken: 100,
+  BRAND_NAME: "PremVPN",
+  PAYMENT_URL: "https://t.me/PremVPN_bot",
+  STATS_WRITE_INTERVAL_MIN: 10,
+};
+
+interface UserData {
+  active: boolean;
+  note: string;
+  expireDate: string;
+  trafficUsedGB: number;
+  blockedIPs: string[];
+  deviceIPs: Record<string, number>;
+  createdAt: string;
+  totalRequests: number;
+  lastAccess: string;
+  lastKVWrite: string;
+}
+
+const kv = await Deno.openKv();
+
+async function initFirstUser() {
+  const existing = await kv.get<UserData>(["users", "demo"]);
+  if (!existing.value) {
+    const demoUser: UserData = {
+      active: true,
+      note: "Демо",
+      expireDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      trafficUsedGB: 0,
+      blockedIPs: [],
+      deviceIPs: {},
+      createdAt: new Date().toISOString(),
+      totalRequests: 0,
+      lastAccess: new Date().toISOString(),
+      lastKVWrite: new Date().toISOString(),
+    };
+    await kv.set(["users", "demo"], demoUser);
+    console.log("✅ Демо-пользователь создан");
+  }
+}
+await initFirstUser();
+
+function generateToken(): string {
+  return "user_" + Math.random().toString(36).substring(2, 10);
+}
+
+async function getAllUsers(): Promise<Array<{ token: string; data: UserData }>> {
+  const users: Array<{ token: string; data: UserData }> = [];
+  const iter = kv.list<UserData>({ prefix: ["users"] });
+  for await (const entry of iter) {
+    users.push({ token: entry.key[1] as string, data: entry.value });
+  }
+  return users.sort((a, b) => a.token.localeCompare(b.token));
+}
+
+// 2. ТЕПЕРЬ МОЖНО ИСПОЛЬЗОВАТЬ CONFIG В ШАБЛОНЕ
 const ADMIN_HTML_TEMPLATE = `<!DOCTYPE html>
 <html>
 <head>
@@ -46,7 +114,7 @@ const ADMIN_HTML_TEMPLATE = `<!DOCTYPE html>
             <option value="">-- Выбери пользователя --</option>
         </select>
         <div style="margin-top:10px">
-            <code id="generatedLink" style="word-break:break-all">karing://restore-backup?url=${location.origin}/config?token=ТОКЕН</code>
+            <code id="generatedLink" style="word-break:break-all">karing://restore-backup?url=\${location.origin}/config?token=ТОКЕН</code>
         </div>
         <button id="copyLinkBtn">📋 Копировать</button>
     </div>
@@ -115,7 +183,6 @@ const ADMIN_HTML_TEMPLATE = `<!DOCTYPE html>
             '</tr>';
         }).join('');
         
-        // Навешиваем обработчики событий на кнопки
         document.querySelectorAll('button[data-action]').forEach(btn => {
             btn.addEventListener('click', async (e) => {
                 const action = btn.dataset.action;
@@ -180,3 +247,189 @@ const ADMIN_HTML_TEMPLATE = `<!DOCTYPE html>
 </script>
 </body>
 </html>`;
+
+// ==================== ОСНОВНОЙ СЕРВЕР ====================
+Deno.serve(async (req: Request) => {
+  const url = new URL(req.url);
+  const clientIP = req.headers.get("x-forwarded-for")?.split(",")[0] || "unknown";
+
+  if (url.pathname === "/" || url.pathname === "/admin") {
+    return new Response(ADMIN_HTML_TEMPLATE, {
+      headers: { "Content-Type": "text/html; charset=utf-8" },
+    });
+  }
+
+  if (url.pathname === "/admin/users") {
+    const users = await getAllUsers();
+    const safeUsers = users.map(u => ({
+      token: u.token,
+      data: {
+        active: u.data.active,
+        note: u.data.note,
+        expireDate: u.data.expireDate,
+        trafficUsedGB: u.data.trafficUsedGB,
+        deviceIPs: u.data.deviceIPs,
+      }
+    }));
+    return Response.json(safeUsers);
+  }
+
+  if (url.pathname === "/admin/add" && req.method === "POST") {
+    const body = await req.json();
+    if (body.password !== CONFIG.ADMIN_PASSWORD) {
+      return Response.json({ success: false, error: "Неверный пароль" }, { status: 401 });
+    }
+    const token = body.token || generateToken();
+    const existing = await kv.get(["users", token]);
+    if (existing.value) return Response.json({ success: false, error: "Токен существует" }, { status: 400 });
+    
+    const user: UserData = {
+      active: true,
+      note: body.note || "",
+      expireDate: body.expireDate || new Date(Date.now() + 30*24*60*60*1000).toISOString().split('T')[0],
+      trafficUsedGB: 0,
+      blockedIPs: [],
+      deviceIPs: {},
+      createdAt: new Date().toISOString(),
+      totalRequests: 0,
+      lastAccess: new Date().toISOString(),
+      lastKVWrite: new Date().toISOString(),
+    };
+    await kv.set(["users", token], user);
+    return Response.json({ success: true, token });
+  }
+
+  if (url.pathname === "/admin/toggle" && req.method === "POST") {
+    const body = await req.json();
+    if (body.password !== CONFIG.ADMIN_PASSWORD) return Response.json({ success: false, error: "Неверный пароль" }, { status: 401 });
+    const userRes = await kv.get<UserData>(["users", body.token]);
+    if (!userRes.value) return Response.json({ success: false, error: "Не найден" }, { status: 404 });
+    userRes.value.active = body.active;
+    await kv.set(["users", body.token], userRes.value);
+    return Response.json({ success: true });
+  }
+
+  if (url.pathname === "/admin/reset-traffic" && req.method === "POST") {
+    const body = await req.json();
+    if (body.password !== CONFIG.ADMIN_PASSWORD) return Response.json({ success: false, error: "Неверный пароль" }, { status: 401 });
+    const userRes = await kv.get<UserData>(["users", body.token]);
+    if (!userRes.value) return Response.json({ success: false, error: "Не найден" }, { status: 404 });
+    userRes.value.trafficUsedGB = 0;
+    await kv.set(["users", body.token], userRes.value);
+    return Response.json({ success: true });
+  }
+
+  if (url.pathname === "/admin/delete" && req.method === "POST") {
+    const body = await req.json();
+    if (body.password !== CONFIG.ADMIN_PASSWORD) return Response.json({ success: false, error: "Неверный пароль" }, { status: 401 });
+    await kv.delete(["users", body.token]);
+    return Response.json({ success: true });
+  }
+
+  if (url.pathname !== "/config") {
+    return new Response("Not Found", { status: 404 });
+  }
+
+  const token = url.searchParams.get("token");
+  if (!token) return new Response("Token required", { status: 401 });
+
+  const userRes = await kv.get<UserData>(["users", token]);
+  if (!userRes.value) return new Response("Invalid token", { status: 401 });
+  const user = userRes.value;
+
+  if (!user.active) return new Response("Account blocked", { status: 403 });
+  if (new Date(user.expireDate) < new Date()) {
+    return new Response("Subscription expired", {
+      status: 403,
+      headers: {
+        "Subscription-Userinfo": `upload=0; download=0; total=0; expire=${Math.floor(new Date(user.expireDate).getTime() / 1000)}`,
+        "isp-name": CONFIG.BRAND_NAME,
+        "isp-url": CONFIG.PAYMENT_URL,
+      }
+    });
+  }
+  if (user.blockedIPs.includes(clientIP)) return new Response("IP blocked", { status: 403 });
+
+  const now = Date.now();
+  const cooldown = CONFIG.tokenCooldownMinutes * 60 * 1000;
+  const cleanIPs: Record<string, number> = {};
+  let activeDevices = 0;
+  for (const [ip, ts] of Object.entries(user.deviceIPs)) {
+    if (now - ts < cooldown) { cleanIPs[ip] = ts; activeDevices++; }
+  }
+
+  const isNewDevice = !cleanIPs[clientIP];
+  if (isNewDevice && activeDevices >= CONFIG.maxDevicesPerToken) {
+    return new Response("Device limit reached", {
+      status: 403,
+      headers: { "isp-name": CONFIG.BRAND_NAME, "isp-url": CONFIG.PAYMENT_URL }
+    });
+  }
+
+  cleanIPs[clientIP] = now;
+  
+  const lastWrite = new Date(user.lastKVWrite).getTime();
+  const writeIntervalMs = CONFIG.STATS_WRITE_INTERVAL_MIN * 60 * 1000;
+  let needKVWrite = false;
+  let newTraffic = user.trafficUsedGB;
+  
+  if (now - lastWrite > writeIntervalMs) {
+    newTraffic = Math.min(user.trafficUsedGB + 0.005, CONFIG.trafficLimitGB);
+    needKVWrite = true;
+  }
+
+  if (newTraffic >= CONFIG.trafficLimitGB) {
+    return new Response("Traffic limit exceeded", {
+      status: 403,
+      headers: {
+        "Subscription-Userinfo": `upload=0; download=0; total=0; expire=${Math.floor(new Date(user.expireDate).getTime() / 1000)}`,
+        "isp-name": CONFIG.BRAND_NAME,
+        "isp-url": CONFIG.PAYMENT_URL,
+      }
+    });
+  }
+
+  if (user.totalRequests > CONFIG.maxRequestsPerToken) {
+    user.active = false;
+    await kv.set(["users", token], user);
+    return new Response("Too many requests", { status: 429 });
+  }
+
+  if (needKVWrite || isNewDevice) {
+    const updated: UserData = {
+      ...user,
+      deviceIPs: cleanIPs,
+      trafficUsedGB: newTraffic,
+      totalRequests: user.totalRequests + 1,
+      lastAccess: new Date().toISOString(),
+      lastKVWrite: new Date().toISOString(),
+    };
+    await kv.set(["users", token], updated);
+    console.log(`💾 KV write: ${token} | трафик: ${newTraffic.toFixed(3)} GB | устр: ${activeDevices + (isNewDevice?1:0)}`);
+  } else {
+    console.log(`✅ ${token} | IP: ${clientIP} | устр: ${activeDevices + (isNewDevice?1:0)} (no KV write)`);
+  }
+
+  try {
+    const backupResp = await fetch(BACKUP_URL);
+    if (!backupResp.ok) throw new Error(`GitHub ${backupResp.status}`);
+    
+    const trafficTotal = CONFIG.trafficLimitGB * 1024 * 1024 * 1024;
+    const trafficUsed = (needKVWrite ? newTraffic : user.trafficUsedGB) * 1024 * 1024 * 1024;
+    const expireTimestamp = Math.floor(new Date(user.expireDate).getTime() / 1000);
+
+    return new Response(backupResp.body, {
+      headers: {
+        "Content-Type": "application/zip",
+        "Content-Disposition": 'attachment; filename="PremVPN.backup.zip"',
+        "Cache-Control": "no-store",
+        "Access-Control-Allow-Origin": "*",
+        "Subscription-Userinfo": `upload=0; download=${trafficUsed}; total=${trafficTotal}; expire=${expireTimestamp}`,
+        "isp-name": CONFIG.BRAND_NAME,
+        "isp-url": CONFIG.PAYMENT_URL,
+      }
+    });
+  } catch (e) {
+    return new Response(`Backup error: ${e}`, { status: 502 });
+  }
+});
