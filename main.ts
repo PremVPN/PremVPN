@@ -1,63 +1,31 @@
 // ==================================================================
-// 🔥 PREMVPN — ОПТИМИЗИРОВАННЫЙ ПРОДАКШН-КОД v5.1
+// 🔥 PREMVPN — СБАЛАНСИРОВАННЫЙ КОД (УДОБСТВО + ЭКОНОМИЯ)
 // ==================================================================
-// Экономия лимитов Deno Deploy:
-// ✅ KV-запись раз в 10 минут (вместо каждого запроса)
-// ✅ Статичный HTML админ-панели + API для данных
-// ✅ Облегчённые стили без градиентов и теней
-// ✅ Все функции сохранены: лимиты, трафик, устройства, блокировки
+// - Веб-панель управления (лёгкая)
+// - KV только для хранения user-объектов (без записи статистики)
+// - Нет демо-пользователя
+// - Минимальное потребление ресурсов Deno Deploy
 // ==================================================================
 
 const BACKUP_URL = "https://raw.githubusercontent.com/PremVPN/PremVPN/refs/heads/main/Karing_1.2.16.backup.zip";
 
 const CONFIG = {
-  maxDevicesPerToken: 2,
-  tokenCooldownMinutes: 60,
-  trafficLimitGB: 100,
-  ADMIN_PASSWORD: "admin123",      // ⚠️ ПОМЕНЯЙ!
-  maxRequestsPerToken: 100,
   BRAND_NAME: "PremVPN",
   PAYMENT_URL: "https://t.me/PremVPN_bot",
-  STATS_WRITE_INTERVAL_MIN: 10,    // Интервал записи статистики в KV
+  ADMIN_PASSWORD: "admin123", // ⚠️ СМЕНИ ПАРОЛЬ!
 };
 
+// Тип пользователя (только необходимые поля)
 interface UserData {
   active: boolean;
   note: string;
-  expireDate: string;
-  trafficUsedGB: number;
-  blockedIPs: string[];
-  deviceIPs: Record<string, number>;
-  createdAt: string;
-  totalRequests: number;
-  lastAccess: string;
-  lastKVWrite: string;             // Время последней записи в KV
+  expireDate: string; // YYYY-MM-DD
 }
 
+// KV хранилище (только для основных данных, без статистики)
 const kv = await Deno.openKv();
 
-// ==================== ИНИЦИАЛИЗАЦИЯ ====================
-async function initFirstUser() {
-  const existing = await kv.get<UserData>(["users", "demo"]);
-  if (!existing.value) {
-    const demoUser: UserData = {
-      active: true,
-      note: "Демо",
-      expireDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-      trafficUsedGB: 0,
-      blockedIPs: [],
-      deviceIPs: {},
-      createdAt: new Date().toISOString(),
-      totalRequests: 0,
-      lastAccess: new Date().toISOString(),
-      lastKVWrite: new Date().toISOString(),
-    };
-    await kv.set(["users", "demo"], demoUser);
-    console.log("✅ Демо-пользователь создан");
-  }
-}
-await initFirstUser();
-
+// ==================== УТИЛИТЫ ====================
 function generateToken(): string {
   return "user_" + Math.random().toString(36).substring(2, 10);
 }
@@ -71,7 +39,7 @@ async function getAllUsers(): Promise<Array<{ token: string; data: UserData }>> 
   return users.sort((a, b) => a.token.localeCompare(b.token));
 }
 
-// ==================== СТАТИЧЕСКИЙ ШАБЛОН АДМИН-ПАНЕЛИ ====================
+// ==================== ЛЁГКАЯ АДМИН-ПАНЕЛЬ (СТАТИЧЕСКИЙ ШАБЛОН) ====================
 const ADMIN_HTML = `<!DOCTYPE html>
 <html>
 <head>
@@ -80,7 +48,7 @@ const ADMIN_HTML = `<!DOCTYPE html>
     <title>${CONFIG.BRAND_NAME} Admin</title>
     <style>
         body { font-family: system-ui, sans-serif; margin: 20px; background: #f0f2f5; }
-        .container { max-width: 1400px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .container { max-width: 1200px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
         h1 { color: #333; margin-top: 0; }
         table { width: 100%; border-collapse: collapse; margin: 20px 0; }
         th, td { padding: 10px; text-align: left; border-bottom: 1px solid #ddd; }
@@ -101,6 +69,7 @@ const ADMIN_HTML = `<!DOCTYPE html>
 <body>
 <div class="container">
     <h1>🚀 ${CONFIG.BRAND_NAME} — Панель управления</h1>
+    <p style="color:#666;margin-top:-10px">Экономичный режим: без записи статистики, только управление доступом</p>
     
     <div class="add-form">
         <input type="text" id="newToken" placeholder="Токен (авто)" style="width:150px">
@@ -127,14 +96,14 @@ const ADMIN_HTML = `<!DOCTYPE html>
 
     <table>
         <thead>
-            <tr><th>Токен</th><th>Статус</th><th>Заметка</th><th>Срок</th><th>Трафик (ГБ)</th><th>Устр.</th><th>Действия</th></tr>
+            <tr><th>Токен</th><th>Статус</th><th>Заметка</th><th>Срок</th><th>Действия</th></tr>
         </thead>
         <tbody id="users-body">
-            <tr><td colspan="7" style="text-align:center">Загрузка...</td></tr>
+            <tr><td colspan="5" style="text-align:center">Загрузка...</td></tr>
         </tbody>
     </table>
-    <div style="margin-top:10px">
-        <small>⚙️ Лимиты: ${CONFIG.maxDevicesPerToken} устр., ${CONFIG.trafficLimitGB} ГБ | Запись в KV раз в ${CONFIG.STATS_WRITE_INTERVAL_MIN} мин</small>
+    <div style="margin-top:10px; font-size:12px; color:#666;">
+        ⚡ Статистика не записывается — лимиты Deno в безопасности.
     </div>
 </div>
 <script>
@@ -160,7 +129,7 @@ const ADMIN_HTML = `<!DOCTYPE html>
     function renderTable() {
         const tbody = document.getElementById('users-body');
         if (!usersData.length) {
-            tbody.innerHTML = '<tr><td colspan="7" style="text-align:center">Нет пользователей</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center">Нет пользователей. Добавьте первого!</td></tr>';
             return;
         }
         tbody.innerHTML = usersData.map(u => {
@@ -170,20 +139,15 @@ const ADMIN_HTML = `<!DOCTYPE html>
             let status = '', badgeClass = '';
             if (!u.data.active) { status = '🚫 Заблокирован'; badgeClass = 'blocked'; }
             else if (daysLeft < 0) { status = '⚠️ Истёк'; badgeClass = 'expired'; }
-            else { status = '✅ Активен'; badgeClass = 'active'; }
-            
-            const activeDevices = Object.values(u.data.deviceIPs || {}).filter(ts => Date.now() - ts < ${CONFIG.tokenCooldownMinutes * 60 * 1000}).length;
+            else { status = '✅ Активен (' + daysLeft + ' дн.)'; badgeClass = 'active'; }
             
             return '<tr>' +
                 '<td><span class="token">' + escapeHtml(u.token) + '</span></td>' +
-                '<td><span class="badge ' + badgeClass + '">' + status + ' (' + daysLeft + ' дн.)</span></td>' +
+                '<td><span class="badge ' + badgeClass + '">' + status + '</span></td>' +
                 '<td>' + escapeHtml(u.data.note || '—') + '</td>' +
                 '<td>' + u.data.expireDate + '</td>' +
-                '<td>' + u.data.trafficUsedGB.toFixed(2) + ' / ${CONFIG.trafficLimitGB}</td>' +
-                '<td>' + activeDevices + ' / ${CONFIG.maxDevicesPerToken}</td>' +
                 '<td>' +
                     '<button data-action="toggle" data-token="' + escapeHtml(u.token) + '" data-active="' + u.data.active + '">' + (u.data.active ? 'Заблокировать' : 'Разблокировать') + '</button> ' +
-                    '<button data-action="reset" data-token="' + escapeHtml(u.token) + '" class="success">Сброс</button> ' +
                     '<button data-action="delete" data-token="' + escapeHtml(u.token) + '" class="danger">Удалить</button>' +
                 '</td>' +
             '</tr>';
@@ -198,11 +162,8 @@ const ADMIN_HTML = `<!DOCTYPE html>
                     if (!confirm('Точно?')) return;
                     const res = await api('/admin/toggle', 'POST', {token, active: !currentActive});
                     if (res.success) loadUsers(); else alert(res.error);
-                } else if (action === 'reset') {
-                    const res = await api('/admin/reset-traffic', 'POST', {token});
-                    if (res.success) loadUsers(); else alert(res.error);
                 } else if (action === 'delete') {
-                    if (!confirm('Удалить '+token+'?')) return;
+                    if (!confirm('Удалить ' + token + '?')) return;
                     const res = await api('/admin/delete', 'POST', {token});
                     if (res.success) loadUsers(); else alert(res.error);
                 }
@@ -257,16 +218,15 @@ const ADMIN_HTML = `<!DOCTYPE html>
 // ==================== ОСНОВНОЙ СЕРВЕР ====================
 Deno.serve(async (req: Request) => {
   const url = new URL(req.url);
-  const clientIP = req.headers.get("x-forwarded-for")?.split(",")[0] || "unknown";
 
-  // Админ-панель (статический HTML)
+  // Админ-панель
   if (url.pathname === "/" || url.pathname === "/admin") {
     return new Response(ADMIN_HTML, {
       headers: { "Content-Type": "text/html; charset=utf-8" },
     });
   }
 
-  // API: получить всех пользователей (для админки)
+  // API: список пользователей
   if (url.pathname === "/admin/users") {
     const users = await getAllUsers();
     const safeUsers = users.map(u => ({
@@ -275,14 +235,12 @@ Deno.serve(async (req: Request) => {
         active: u.data.active,
         note: u.data.note,
         expireDate: u.data.expireDate,
-        trafficUsedGB: u.data.trafficUsedGB,
-        deviceIPs: u.data.deviceIPs,
       }
     }));
     return Response.json(safeUsers);
   }
 
-  // API: добавить пользователя
+  // API: добавить
   if (url.pathname === "/admin/add" && req.method === "POST") {
     const body = await req.json();
     if (body.password !== CONFIG.ADMIN_PASSWORD) {
@@ -296,36 +254,18 @@ Deno.serve(async (req: Request) => {
       active: true,
       note: body.note || "",
       expireDate: body.expireDate || new Date(Date.now() + 30*24*60*60*1000).toISOString().split('T')[0],
-      trafficUsedGB: 0,
-      blockedIPs: [],
-      deviceIPs: {},
-      createdAt: new Date().toISOString(),
-      totalRequests: 0,
-      lastAccess: new Date().toISOString(),
-      lastKVWrite: new Date().toISOString(),
     };
     await kv.set(["users", token], user);
     return Response.json({ success: true, token });
   }
 
-  // API: toggle active
+  // API: переключить active
   if (url.pathname === "/admin/toggle" && req.method === "POST") {
     const body = await req.json();
     if (body.password !== CONFIG.ADMIN_PASSWORD) return Response.json({ success: false, error: "Неверный пароль" }, { status: 401 });
     const userRes = await kv.get<UserData>(["users", body.token]);
     if (!userRes.value) return Response.json({ success: false, error: "Не найден" }, { status: 404 });
     userRes.value.active = body.active;
-    await kv.set(["users", body.token], userRes.value);
-    return Response.json({ success: true });
-  }
-
-  // API: сброс трафика
-  if (url.pathname === "/admin/reset-traffic" && req.method === "POST") {
-    const body = await req.json();
-    if (body.password !== CONFIG.ADMIN_PASSWORD) return Response.json({ success: false, error: "Неверный пароль" }, { status: 401 });
-    const userRes = await kv.get<UserData>(["users", body.token]);
-    if (!userRes.value) return Response.json({ success: false, error: "Не найден" }, { status: 404 });
-    userRes.value.trafficUsedGB = 0;
     await kv.set(["users", body.token], userRes.value);
     return Response.json({ success: true });
   }
@@ -351,98 +291,33 @@ Deno.serve(async (req: Request) => {
   const user = userRes.value;
 
   if (!user.active) return new Response("Account blocked", { status: 403 });
-  if (new Date(user.expireDate) < new Date()) {
+
+  const expireDate = new Date(user.expireDate);
+  if (new Date() > expireDate) {
     return new Response("Subscription expired", {
       status: 403,
       headers: {
-        "Subscription-Userinfo": `upload=0; download=0; total=0; expire=${Math.floor(new Date(user.expireDate).getTime() / 1000)}`,
+        "Subscription-Userinfo": `upload=0; download=0; total=0; expire=${Math.floor(expireDate.getTime() / 1000)}`,
         "isp-name": CONFIG.BRAND_NAME,
         "isp-url": CONFIG.PAYMENT_URL,
-      }
-    });
-  }
-  if (user.blockedIPs.includes(clientIP)) return new Response("IP blocked", { status: 403 });
-
-  const now = Date.now();
-  const cooldown = CONFIG.tokenCooldownMinutes * 60 * 1000;
-  const cleanIPs: Record<string, number> = {};
-  let activeDevices = 0;
-  for (const [ip, ts] of Object.entries(user.deviceIPs)) {
-    if (now - ts < cooldown) { cleanIPs[ip] = ts; activeDevices++; }
-  }
-
-  const isNewDevice = !cleanIPs[clientIP];
-  if (isNewDevice && activeDevices >= CONFIG.maxDevicesPerToken) {
-    return new Response("Device limit reached", {
-      status: 403,
-      headers: { "isp-name": CONFIG.BRAND_NAME, "isp-url": CONFIG.PAYMENT_URL }
+      },
     });
   }
 
-  cleanIPs[clientIP] = now;
-  
-  const lastWrite = new Date(user.lastKVWrite).getTime();
-  const writeIntervalMs = CONFIG.STATS_WRITE_INTERVAL_MIN * 60 * 1000;
-  let needKVWrite = false;
-  let newTraffic = user.trafficUsedGB;
-  
-  if (now - lastWrite > writeIntervalMs) {
-    newTraffic = Math.min(user.trafficUsedGB + 0.005, CONFIG.trafficLimitGB); // ~5 MB за интервал
-    needKVWrite = true;
-  }
-
-  if (newTraffic >= CONFIG.trafficLimitGB) {
-    return new Response("Traffic limit exceeded", {
-      status: 403,
-      headers: {
-        "Subscription-Userinfo": `upload=0; download=0; total=0; expire=${Math.floor(new Date(user.expireDate).getTime() / 1000)}`,
-        "isp-name": CONFIG.BRAND_NAME,
-        "isp-url": CONFIG.PAYMENT_URL,
-      }
-    });
-  }
-
-  if (user.totalRequests > CONFIG.maxRequestsPerToken) {
-    user.active = false;
-    await kv.set(["users", token], user);
-    return new Response("Too many requests", { status: 429 });
-  }
-
-  if (needKVWrite || isNewDevice) {
-    const updated: UserData = {
-      ...user,
-      deviceIPs: cleanIPs,
-      trafficUsedGB: newTraffic,
-      totalRequests: user.totalRequests + 1,
-      lastAccess: new Date().toISOString(),
-      lastKVWrite: new Date().toISOString(),
-    };
-    await kv.set(["users", token], updated);
-    console.log(`💾 KV write: ${token} | трафик: ${newTraffic.toFixed(3)} GB | устр: ${activeDevices + (isNewDevice?1:0)}`);
-  } else {
-    console.log(`✅ ${token} | IP: ${clientIP} | устр: ${activeDevices + (isNewDevice?1:0)} (no KV write)`);
-  }
-
+  // Проксируем файл (без какой-либо записи в KV)
   try {
     const backupResp = await fetch(BACKUP_URL);
-    if (!backupResp.ok) throw new Error(`GitHub ${backupResp.status}`);
-    
-    const trafficTotal = CONFIG.trafficLimitGB * 1024 * 1024 * 1024;
-    const trafficUsed = (needKVWrite ? newTraffic : user.trafficUsedGB) * 1024 * 1024 * 1024;
-    const expireTimestamp = Math.floor(new Date(user.expireDate).getTime() / 1000);
-
+    if (!backupResp.ok) throw new Error("Backup fetch failed");
     return new Response(backupResp.body, {
       headers: {
         "Content-Type": "application/zip",
         "Content-Disposition": 'attachment; filename="PremVPN.backup.zip"',
-        "Cache-Control": "no-store",
-        "Access-Control-Allow-Origin": "*",
-        "Subscription-Userinfo": `upload=0; download=${trafficUsed}; total=${trafficTotal}; expire=${expireTimestamp}`,
+        "Cache-Control": "public, max-age=3600",
         "isp-name": CONFIG.BRAND_NAME,
         "isp-url": CONFIG.PAYMENT_URL,
-      }
+      },
     });
   } catch (e) {
-    return new Response(`Backup error: ${e}`, { status: 502 });
+    return new Response("Backup unavailable", { status: 502 });
   }
 });
