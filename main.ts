@@ -1,28 +1,27 @@
 // ==================================================================
-// 🔥 PREMVPN — СБАЛАНСИРОВАННЫЙ КОД (УДОБСТВО + ЭКОНОМИЯ)
+// 🔥 PREMVPN — ФИНАЛЬНЫЙ ГОТОВЫЙ КОД (ДНИ + ЧАСЫ, МАКС. ЭКОНОМИЯ)
 // ==================================================================
 // - Веб-панель управления (лёгкая)
-// - KV только для хранения user-объектов (без записи статистики)
-// - Нет демо-пользователя
-// - Минимальное потребление ресурсов Deno Deploy
+// - Deno KV только для хранения пользователей (active, note, expireDate)
+// - Поддержка сроков: 2ч, 4ч, 6ч, 7д, 30д, 90д
+// - Без записи статистики при каждом запросе — минимальный расход лимитов
+// - Без демо-пользователя
 // ==================================================================
 
-const BACKUP_URL = "https://raw.githubusercontent.com/PremVPN/PremVPN/raw/refs/heads/main/Karing_1.2.16.zip";
+const BACKUP_URL = "https://github.com/PremVPN/PremVPN/raw/refs/heads/main/Karing_1.2.16.zip";
 
 const CONFIG = {
   BRAND_NAME: "PremVPN",
-  PAYMENT_URL: "https://t.me/PremVPN_bot",
-  ADMIN_PASSWORD: "admin123", // ⚠️ СМЕНИ ПАРОЛЬ!
+  PAYMENT_URL: "https://t.me/PremVPN_bot", // Замени на свой
+  ADMIN_PASSWORD: "admin123",              // ⚠️ ОБЯЗАТЕЛЬНО СМЕНИ ПАРОЛЬ!
 };
 
-// Тип пользователя (только необходимые поля)
 interface UserData {
   active: boolean;
   note: string;
-  expireDate: string; // YYYY-MM-DD
+  expireDate: string; // ISO строка (с временем)
 }
 
-// KV хранилище (только для основных данных, без статистики)
 const kv = await Deno.openKv();
 
 // ==================== УТИЛИТЫ ====================
@@ -39,7 +38,7 @@ async function getAllUsers(): Promise<Array<{ token: string; data: UserData }>> 
   return users.sort((a, b) => a.token.localeCompare(b.token));
 }
 
-// ==================== ЛЁГКАЯ АДМИН-ПАНЕЛЬ (СТАТИЧЕСКИЙ ШАБЛОН) ====================
+// ==================== ЛЁГКАЯ АДМИН-ПАНЕЛЬ ====================
 const ADMIN_HTML = `<!DOCTYPE html>
 <html>
 <head>
@@ -53,58 +52,72 @@ const ADMIN_HTML = `<!DOCTYPE html>
         table { width: 100%; border-collapse: collapse; margin: 20px 0; }
         th, td { padding: 10px; text-align: left; border-bottom: 1px solid #ddd; }
         th { background: #f8f9fa; }
-        .add-form { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px; }
-        input, select, button { padding: 8px 12px; border: 1px solid #ccc; border-radius: 4px; }
+        .add-form { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px; align-items: flex-end; }
+        .form-group { display: flex; flex-direction: column; gap: 4px; }
+        .form-group label { font-size: 12px; color: #555; }
+        input, select, button { padding: 8px 12px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; }
         button { background: #007bff; color: white; border: none; cursor: pointer; }
         button.danger { background: #dc3545; }
-        button.success { background: #28a745; }
         .token { font-family: monospace; background: #eee; padding: 2px 6px; border-radius: 4px; }
         .link-box { background: #e9ecef; padding: 10px; border-radius: 4px; margin: 15px 0; }
         .badge { display: inline-block; padding: 3px 8px; border-radius: 12px; font-size: 12px; }
         .badge.active { background: #d4edda; color: #155724; }
         .badge.blocked { background: #f8d7da; color: #721c24; }
         .badge.expired { background: #fff3cd; color: #856404; }
+        .note { font-size: 12px; color: #666; margin-top: 10px; }
     </style>
 </head>
 <body>
 <div class="container">
     <h1>🚀 ${CONFIG.BRAND_NAME} — Панель управления</h1>
-    <p style="color:#666;margin-top:-10px">Экономичный режим: без записи статистики, только управление доступом</p>
+    <p class="note">⚡ Экономичный режим: без счётчиков трафика и устройств. Только управление доступом.</p>
     
     <div class="add-form">
-        <input type="text" id="newToken" placeholder="Токен (авто)" style="width:150px">
-        <input type="text" id="newNote" placeholder="Заметка">
-        <input type="date" id="newExpire" value="${new Date(Date.now() + 30*24*60*60*1000).toISOString().split('T')[0]}">
-        <select id="expirePreset">
-            <option value="30">30 дней</option>
-            <option value="7">7 дней</option>
-            <option value="90">90 дней</option>
-        </select>
+        <div class="form-group">
+            <label>Токен (пусто = авто)</label>
+            <input type="text" id="newToken" placeholder="user_xxxxxxxx" style="font-family:monospace;width:160px">
+        </div>
+        <div class="form-group">
+            <label>Заметка</label>
+            <input type="text" id="newNote" placeholder="Клиент">
+        </div>
+        <div class="form-group">
+            <label>Срок действия</label>
+            <input type="datetime-local" id="newExpire" value="${new Date(Date.now() + 30*24*60*60*1000).toISOString().slice(0,16)}">
+        </div>
+        <div class="form-group">
+            <label>Быстрый выбор</label>
+            <select id="expirePreset">
+                <option value="30d">30 дней</option>
+                <option value="7d">7 дней</option>
+                <option value="90d">90 дней</option>
+                <option value="2h">2 часа</option>
+                <option value="4h">4 часа</option>
+                <option value="6h">6 часов</option>
+            </select>
+        </div>
         <button id="addUserBtn">➕ Добавить</button>
     </div>
 
     <div class="link-box">
         <strong>🔗 Ссылка для Karing:</strong>
-        <select id="tokenSelect" style="margin-left:10px; width:200px">
+        <select id="tokenSelect" style="margin-left:10px; width:220px">
             <option value="">-- Выбери пользователя --</option>
         </select>
         <div style="margin-top:10px">
             <code id="generatedLink" style="word-break:break-all">karing://restore-backup?url=\${location.origin}/config?token=ТОКЕН</code>
         </div>
-        <button id="copyLinkBtn">📋 Копировать</button>
+        <button id="copyLinkBtn">📋 Копировать ссылку</button>
     </div>
 
     <table>
         <thead>
-            <tr><th>Токен</th><th>Статус</th><th>Заметка</th><th>Срок</th><th>Действия</th></tr>
+            <tr><th>Токен</th><th>Статус</th><th>Заметка</th><th>Срок действия</th><th>Действия</th></tr>
         </thead>
         <tbody id="users-body">
             <tr><td colspan="5" style="text-align:center">Загрузка...</td></tr>
         </tbody>
     </table>
-    <div style="margin-top:10px; font-size:12px; color:#666;">
-        ⚡ Статистика не записывается — лимиты Deno в безопасности.
-    </div>
 </div>
 <script>
     const PASSWORD = prompt("🔐 Пароль администратора") || "";
@@ -126,6 +139,17 @@ const ADMIN_HTML = `<!DOCTYPE html>
         updateTokenSelect();
     }
 
+    function getTimeLeft(expireStr) {
+        const exp = new Date(expireStr);
+        const now = new Date();
+        const diff = exp - now;
+        if (diff < 0) return { text: 'Истёк', expired: true };
+        const hours = diff / (1000 * 60 * 60);
+        if (hours < 24) return { text: Math.round(hours) + ' ч', expired: false };
+        const days = Math.floor(hours / 24);
+        return { text: days + ' дн', expired: false };
+    }
+
     function renderTable() {
         const tbody = document.getElementById('users-body');
         if (!usersData.length) {
@@ -135,17 +159,24 @@ const ADMIN_HTML = `<!DOCTYPE html>
         tbody.innerHTML = usersData.map(u => {
             const exp = new Date(u.data.expireDate);
             const now = new Date();
-            const daysLeft = Math.ceil((exp - now)/(86400000));
+            const timeLeft = getTimeLeft(u.data.expireDate);
+            const isExpired = exp < now;
+            
             let status = '', badgeClass = '';
             if (!u.data.active) { status = '🚫 Заблокирован'; badgeClass = 'blocked'; }
-            else if (daysLeft < 0) { status = '⚠️ Истёк'; badgeClass = 'expired'; }
-            else { status = '✅ Активен (' + daysLeft + ' дн.)'; badgeClass = 'active'; }
+            else if (isExpired) { status = '⚠️ Истёк'; badgeClass = 'expired'; }
+            else { status = '✅ Активен (' + timeLeft.text + ')'; badgeClass = 'active'; }
+            
+            const expireFormatted = exp.toLocaleString('ru-RU', { 
+                day:'2-digit', month:'2-digit', year:'numeric', 
+                hour:'2-digit', minute:'2-digit' 
+            });
             
             return '<tr>' +
                 '<td><span class="token">' + escapeHtml(u.token) + '</span></td>' +
                 '<td><span class="badge ' + badgeClass + '">' + status + '</span></td>' +
                 '<td>' + escapeHtml(u.data.note || '—') + '</td>' +
-                '<td>' + u.data.expireDate + '</td>' +
+                '<td>' + expireFormatted + '</td>' +
                 '<td>' +
                     '<button data-action="toggle" data-token="' + escapeHtml(u.token) + '" data-active="' + u.data.active + '">' + (u.data.active ? 'Заблокировать' : 'Разблокировать') + '</button> ' +
                     '<button data-action="delete" data-token="' + escapeHtml(u.token) + '" class="danger">Удалить</button>' +
@@ -195,6 +226,17 @@ const ADMIN_HTML = `<!DOCTYPE html>
         alert('Скопировано!');
     });
 
+    document.getElementById('expirePreset').addEventListener('change', function() {
+        const val = this.value;
+        let date = new Date();
+        if (val.endsWith('d')) {
+            date.setDate(date.getDate() + parseInt(val));
+        } else if (val.endsWith('h')) {
+            date.setHours(date.getHours() + parseInt(val));
+        }
+        document.getElementById('newExpire').value = date.toISOString().slice(0,16);
+    });
+
     document.getElementById('addUserBtn').addEventListener('click', async function() {
         const token = document.getElementById('newToken').value;
         const note = document.getElementById('newNote').value;
@@ -202,12 +244,6 @@ const ADMIN_HTML = `<!DOCTYPE html>
         const res = await api('/admin/add', 'POST', {token: token || undefined, note, expireDate: expire});
         if (res.success) { alert('Добавлен: '+res.token); loadUsers(); }
         else alert(res.error);
-    });
-
-    document.getElementById('expirePreset').addEventListener('change', function() {
-        const days = parseInt(this.value);
-        const date = new Date(Date.now() + days*24*60*60*1000);
-        document.getElementById('newExpire').value = date.toISOString().split('T')[0];
     });
 
     loadUsers();
@@ -253,7 +289,7 @@ Deno.serve(async (req: Request) => {
     const user: UserData = {
       active: true,
       note: body.note || "",
-      expireDate: body.expireDate || new Date(Date.now() + 30*24*60*60*1000).toISOString().split('T')[0],
+      expireDate: body.expireDate || new Date(Date.now() + 30*24*60*60*1000).toISOString(),
     };
     await kv.set(["users", token], user);
     return Response.json({ success: true, token });
@@ -304,7 +340,7 @@ Deno.serve(async (req: Request) => {
     });
   }
 
-  // Проксируем файл (без какой-либо записи в KV)
+  // Проксируем файл (без записи в KV)
   try {
     const backupResp = await fetch(BACKUP_URL);
     if (!backupResp.ok) throw new Error("Backup fetch failed");
