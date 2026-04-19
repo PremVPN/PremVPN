@@ -3,7 +3,7 @@
 // С веб-панелью управления пользователями
 // =============================================
 
-const BACKUP_URL = "https://raw.githubusercontent.com/PremVPN/PremVPN/main/Karing_1.2.16.1912_ios_2026-04-18-1749.backup.zip";
+const BACKUP_URL = "https://github.com/PremVPN/Moskow-univer/raw/refs/heads/main/Karing_1.2.16.1912_ios_2026-04-18-1749.backup.zip";
 
 // ========== НАСТРОЙКИ ==========
 const CONFIG = {
