@@ -1,70 +1,50 @@
 // =============================================
-// Karing Deno Deploy Auth Proxy v2.0
-// Защита от шеринга + лимиты + монетизация
+// Karing Deno Deploy Auth Proxy v3.0
+// С постоянным хранилищем Deno KV
 // =============================================
 
 const BACKUP_URL = "https://github.com/PremVPN/PremV2PN/raw/main/Karing_1.2.16.1912_ios_2026-04-18-1749.backup.zip";
 
-// Настройки безопасности
+// Настройки
 const CONFIG = {
-  maxDevicesPerToken: 2,        // Максимум устройств на 1 токен
-  tokenCooldownMinutes: 60,     // Через сколько "забываем" IP устройства
-  maxRequestsPerToken: 50,      // Лимит скачиваний (защита от автоматических скриптов)
-  trafficLimitGB: 100,          // Лимит трафика в ГБ (будет отображаться в Karing)
+  maxDevicesPerToken: 2,
+  tokenCooldownMinutes: 60,
+  maxRequestsPerToken: 50,
+  trafficLimitGB: 100,
 };
 
-// === ТВОЯ БАЗА ПОЛЬЗОВАТЕЛЕЙ (редактируй здесь) ===
+// Интерфейс пользователя (сохраняется в KV)
 interface UserData {
   active: boolean;
-  note?: string;
-  expireDate: string;           // Дата окончания подписки (YYYY-MM-DD)
-  trafficUsedGB: number;        // Сколько уже использовано трафика
-  blockedIPs?: string[];        // Заблокированные IP (если юзер пытался шарить)
-  deviceIPs: Map<string, number>; // IP -> timestamp последнего запроса
+  note: string;
+  expireDate: string;
+  trafficUsedGB: number;
+  blockedIPs: string[];
+  deviceIPs: Record<string, number>; // IP -> timestamp последнего запроса
 }
 
-// Хранилище в памяти (Deno Deploy сбрасывает при деплое, но для MVP ок)
-// Для продакшена лучше использовать Deno KV (напишу отдельно если нужно)
-const users = new Map<string, UserData>([
-  ["abc123", {
-    active: true,
-    note: "Тестовый пользователь",
-    expireDate: "2026-05-19",
-    trafficUsedGB: 0,
-    deviceIPs: new Map(),
-  }],
-  ["premium456", {
-    active: true,
-    note: "VIP на 3 месяца",
-    expireDate: "2026-07-19",
-    trafficUsedGB: 12.5,
-    deviceIPs: new Map(),
-  }],
-  ["blocked789", {
-    active: false,
-    note: "Заблокирован за шеринг",
-    expireDate: "2026-04-19",
-    trafficUsedGB: 50,
-    deviceIPs: new Map(),
-  }],
-]);
+// Открываем KV-хранилище (автоматически подключается к привязанной базе)
+const kv = await Deno.openKv();
 
-// Счетчик запросов (Rate Limiting)
-const requestCounter = new Map<string, number>();
-
-// Очистка старых IP каждые 5 минут
-setInterval(() => {
-  const now = Date.now();
-  const cooldownMs = CONFIG.tokenCooldownMinutes * 60 * 1000;
-  
-  for (const [token, user] of users) {
-    for (const [ip, timestamp] of user.deviceIPs) {
-      if (now - timestamp > cooldownMs) {
-        user.deviceIPs.delete(ip);
-      }
-    }
+// Функция для инициализации тестового пользователя (выполнится один раз)
+async function initDefaultUser() {
+  const existing = await kv.get<UserData>(["users", "abc123"]);
+  if (!existing.value) {
+    const user: UserData = {
+      active: true,
+      note: "Тестовый пользователь",
+      expireDate: "2026-05-19",
+      trafficUsedGB: 0,
+      blockedIPs: [],
+      deviceIPs: {},
+    };
+    await kv.set(["users", "abc123"], user);
+    console.log("✅ Создан тестовый пользователь abc123");
   }
-}, 5 * 60 * 1000);
+}
+
+// Запускаем инициализацию
+await initDefaultUser();
 
 Deno.serve(async (req: Request): Promise<Response> => {
   const url = new URL(req.url);
@@ -72,34 +52,46 @@ Deno.serve(async (req: Request): Promise<Response> => {
                    req.headers.get("cf-connecting-ip") || 
                    "unknown";
 
-  // Маршрут для проверки статуса (для отладки)
+  // Эндпоинт для просмотра статистики
   if (url.pathname === "/status") {
     const token = url.searchParams.get("token");
-    if (!token || !users.has(token)) {
-      return new Response(JSON.stringify({ error: "Invalid token" }), { 
-        status: 401,
-        headers: { "Content-Type": "application/json" }
+    if (!token) {
+      return new Response(JSON.stringify({ error: "Token required" }), { 
+        status: 400,
+        headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
       });
     }
+
+    const userRes = await kv.get<UserData>(["users", token]);
+    if (!userRes.value) {
+      return new Response(JSON.stringify({ error: "User not found" }), { 
+        status: 404,
+        headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
+      });
+    }
+
+    const user = userRes.value;
+    const now = Date.now();
+    const cooldownMs = CONFIG.tokenCooldownMinutes * 60 * 1000;
     
-    const user = users.get(token)!;
-    const deviceCount = user.deviceIPs.size;
-    const remainingTraffic = CONFIG.trafficLimitGB - user.trafficUsedGB;
-    
+    // Считаем активные устройства
+    let activeDevices = 0;
+    for (const timestamp of Object.values(user.deviceIPs)) {
+      if (now - timestamp < cooldownMs) activeDevices++;
+    }
+
     return new Response(JSON.stringify({
       active: user.active,
       expireDate: user.expireDate,
       trafficUsed: user.trafficUsedGB,
       trafficLimit: CONFIG.trafficLimitGB,
-      remainingTraffic: remainingTraffic,
-      devices: deviceCount,
+      remainingTraffic: CONFIG.trafficLimitGB - user.trafficUsedGB,
+      devices: activeDevices,
       maxDevices: CONFIG.maxDevicesPerToken,
       note: user.note,
+      blockedIPs: user.blockedIPs,
     }), {
-      headers: { 
-        "Content-Type": "application/json",
-        "Access-Control-Allow-Origin": "*"
-      }
+      headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
     });
   }
 
@@ -109,141 +101,119 @@ Deno.serve(async (req: Request): Promise<Response> => {
   }
 
   const token = url.searchParams.get("token");
-
-  // Защита от брутфорса
   if (!token) {
-    console.log(`⚠️ [${new Date().toISOString()}] No token from IP: ${clientIP}`);
     return new Response("❌ Token required", { status: 401 });
   }
 
-  const user = users.get(token);
-
-  if (!user) {
-    console.log(`🚫 [${new Date().toISOString()}] Invalid token attempt: ${token} from IP: ${clientIP}`);
+  // Получаем пользователя из KV
+  const userRes = await kv.get<UserData>(["users", token]);
+  if (!userRes.value) {
+    console.log(`🚫 Invalid token: ${token} from ${clientIP}`);
     return new Response("❌ Invalid token", { status: 401 });
   }
 
-  // Проверка блокировки пользователя
+  const user = userRes.value;
+
+  // Проверка активности
   if (!user.active) {
-    console.log(`⛔ [${new Date().toISOString()}] Blocked user: ${token} | IP: ${clientIP}`);
-    return new Response("❌ Access blocked by admin", { status: 403 });
+    return new Response("❌ Account blocked", { status: 403 });
   }
 
   // Проверка срока подписки
-  const now = new Date();
   const expireDate = new Date(user.expireDate);
-  if (now > expireDate) {
-    console.log(`📅 [${new Date().toISOString()}] Expired: ${token} | IP: ${clientIP}`);
+  if (new Date() > expireDate) {
     return new Response("❌ Subscription expired", { 
       status: 403,
       headers: {
         "Subscription-Userinfo": `upload=0; download=0; total=0; expire=${Math.floor(expireDate.getTime() / 1000)}`,
-        "isp-name": encodeURIComponent("PremVPN"),
+        "isp-name": "PremVPN",
         "isp-url": "https://t.me/PremVPN_bot",
       }
     });
   }
 
-  // Проверка лимита устройств
-  const now2 = Date.now();
+  // Проверка блокировки IP
+  if (user.blockedIPs.includes(clientIP)) {
+    console.log(`🔒 Blocked IP: ${clientIP} | Token: ${token}`);
+    return new Response("❌ IP blocked", { status: 403 });
+  }
+
+  // Очистка старых IP и подсчёт активных устройств
+  const now = Date.now();
   const cooldownMs = CONFIG.tokenCooldownMinutes * 60 * 1000;
-  
-  // Очищаем старые IP
-  for (const [ip, timestamp] of user.deviceIPs) {
-    if (now2 - timestamp > cooldownMs) {
-      user.deviceIPs.delete(ip);
+  const cleanDeviceIPs: Record<string, number> = {};
+  let activeDevices = 0;
+
+  for (const [ip, timestamp] of Object.entries(user.deviceIPs)) {
+    if (now - timestamp < cooldownMs) {
+      cleanDeviceIPs[ip] = timestamp;
+      activeDevices++;
     }
   }
 
-  // Проверяем, не заблокирован ли этот IP
-  if (user.blockedIPs?.includes(clientIP)) {
-    console.log(`🔒 [${new Date().toISOString()}] Blocked IP attempt: ${clientIP} | Token: ${token}`);
-    return new Response("❌ IP blocked due to suspicious activity", { status: 403 });
-  }
-
-  // Если это новое устройство и лимит превышен
-  if (!user.deviceIPs.has(clientIP) && user.deviceIPs.size >= CONFIG.maxDevicesPerToken) {
-    console.log(`📱 [${new Date().toISOString()}] Device limit exceeded: ${token} | IP: ${clientIP} | Current devices: ${Array.from(user.deviceIPs.keys()).join(", ")}`);
-    
-    // Опционально: можно автоматически блокировать токен при частых превышениях
-    // if (превышений > 3) user.active = false;
-    
-    return new Response("❌ Device limit reached. Upgrade your plan for more devices.", { 
+  // Проверка лимита устройств
+  const isNewDevice = !cleanDeviceIPs[clientIP];
+  if (isNewDevice && activeDevices >= CONFIG.maxDevicesPerToken) {
+    console.log(`📱 Device limit: ${token} | IP: ${clientIP} | Active: ${activeDevices}`);
+    return new Response("❌ Device limit reached", { 
       status: 403,
       headers: {
-        "isp-name": encodeURIComponent("PremVPN"),
+        "isp-name": "PremVPN",
         "isp-url": "https://t.me/PremVPN_bot",
       }
     });
   }
 
-  // Rate Limiting (защита от скачивания скриптами)
-  const reqCount = (requestCounter.get(token) || 0) + 1;
-  requestCounter.set(token, reqCount);
-  
-  if (reqCount > CONFIG.maxRequestsPerToken) {
-    console.log(`🤖 [${new Date().toISOString()}] Rate limit exceeded: ${token} | Requests: ${reqCount}`);
-    user.active = false; // Автоматическая блокировка
-    return new Response("❌ Too many requests. Account blocked.", { status: 429 });
-  }
+  // Обновляем timestamp для текущего IP
+  cleanDeviceIPs[clientIP] = now;
 
-  // Обновляем время последнего запроса для этого IP
-  user.deviceIPs.set(clientIP, now2);
-
-  // Увеличиваем использованный трафик (примерно 1 МБ на запрос конфига)
-  const trafficMB = 1;
-  user.trafficUsedGB += trafficMB / 1024;
+  // Увеличиваем трафик (~1 МБ на запрос конфига)
+  const newTrafficUsed = user.trafficUsedGB + (1 / 1024);
 
   // Проверка лимита трафика
-  if (user.trafficUsedGB >= CONFIG.trafficLimitGB) {
-    console.log(`📊 [${new Date().toISOString()}] Traffic limit exceeded: ${token} | Used: ${user.trafficUsedGB.toFixed(2)} GB`);
+  if (newTrafficUsed >= CONFIG.trafficLimitGB) {
+    console.log(`📊 Traffic limit: ${token} | Used: ${newTrafficUsed.toFixed(2)}GB`);
     return new Response("❌ Traffic limit exceeded", { 
       status: 403,
       headers: {
         "Subscription-Userinfo": `upload=0; download=0; total=0; expire=${Math.floor(expireDate.getTime() / 1000)}`,
-        "isp-name": encodeURIComponent("PremVPN"),
+        "isp-name": "PremVPN",
         "isp-url": "https://t.me/PremVPN_bot",
       }
     });
   }
 
-  // Логирование успешного доступа
-  console.log(`✅ [${new Date().toISOString()}] Token: ${token} | IP: ${clientIP} | Devices: ${user.deviceIPs.size}/${CONFIG.maxDevicesPerToken} | Traffic: ${user.trafficUsedGB.toFixed(2)}/${CONFIG.trafficLimitGB}GB`);
+  // Сохраняем обновлённые данные в KV
+  const updatedUser: UserData = {
+    ...user,
+    deviceIPs: cleanDeviceIPs,
+    trafficUsedGB: newTrafficUsed,
+  };
+  await kv.set(["users", token], updatedUser);
+
+  console.log(`✅ ${token} | IP: ${clientIP} | Devices: ${activeDevices}/${CONFIG.maxDevicesPerToken} | Traffic: ${newTrafficUsed.toFixed(2)}GB`);
 
   // Получаем бэкап
-  const response = await fetch(BACKUP_URL, {
-    headers: {
-      "User-Agent": "Karing-Proxy/2.0",
-    },
-  });
-
+  const response = await fetch(BACKUP_URL);
   if (!response.ok) {
-    return new Response("❌ Backup file error", { status: 502 });
+    return new Response("❌ Backup error", { status: 502 });
   }
 
-  // Подготовка заголовков для Karing
-  const trafficTotal = CONFIG.trafficLimitGB * 1024 * 1024 * 1024; // в байтах
-  const trafficUsed = user.trafficUsedGB * 1024 * 1024 * 1024;
-  const trafficRemaining = trafficTotal - trafficUsed;
+  // Заголовки для Karing
+  const trafficTotal = CONFIG.trafficLimitGB * 1024 * 1024 * 1024;
+  const trafficUsed = newTrafficUsed * 1024 * 1024 * 1024;
   const expireTimestamp = Math.floor(expireDate.getTime() / 1000);
 
   return new Response(response.body, {
-    status: response.status,
+    status: 200,
     headers: {
       "Content-Type": "application/zip",
-      "Content-Disposition": `attachment; filename="Karing_backup.zip"`,
-      "Cache-Control": "no-store, no-cache, must-revalidate",
+      "Content-Disposition": 'attachment; filename="Karing_backup.zip"',
+      "Cache-Control": "no-store",
       "Access-Control-Allow-Origin": "*",
-      
-      // Заголовки для Karing (показывают статус подписки)
       "Subscription-Userinfo": `upload=0; download=${trafficUsed}; total=${trafficTotal}; expire=${expireTimestamp}`,
-      "isp-name": encodeURIComponent("PremVPN"),
-      "isp-url": "https://t.me/PremVPN_bot", // Замени на свой канал/сайт оплаты
+      "isp-name": "PremVPN",
+      "isp-url": "https://t.me/PremVPN_bot",
     },
   });
 });
-
-// Сброс счетчика запросов каждый час
-setInterval(() => {
-  requestCounter.clear();
-}, 60 * 60 * 1000);
