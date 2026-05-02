@@ -1,0 +1,601 @@
+{
+  "experimental": {
+    "clash_api": {
+      "external_controller": "",
+      "secret": ""
+    },
+    "debug": {
+      "max_threads": null,
+      "panic_on_fault": false,
+      "listen": null
+    },
+    "statistics": {
+      "enabled": false,
+      "data_desensitize": true,
+      "cache_days": 7,
+      "path": ""
+    },
+    "cache_file": {
+      "enabled": false,
+      "path": "",
+      "store_fakeip": false
+    }
+  },
+  "log": {
+    "disabled": false,
+    "level": "info",
+    "output": "",
+    "timestamp": true
+  },
+  "ntp": {
+    "enabled": false,
+    "server": "time.windows.com",
+    "server_port": 123,
+    "interval": "12h"
+  },
+  "dns": {
+    "final": "dns_proxy_out",
+    "servers": [
+      {
+        "tag": "local",
+        "type": "local",
+        "domain_resolver": {
+          "server": "dns_resolver_out",
+          "rewrite_ttl": 43200,
+          "strategy": "ipv4_only"
+        }
+      },
+      {
+        "tag": "dhcp://auto",
+        "type": "dhcp",
+        "domain_resolver": {
+          "server": "dns_resolver_out",
+          "rewrite_ttl": 43200,
+          "strategy": "ipv4_only"
+        }
+      },
+      {
+        "tag": "udp://8.8.4.4",
+        "type": "udp",
+        "server": "8.8.4.4",
+        "server_port": 53,
+        "domain_resolver": {
+          "server": "dns_resolver_out",
+          "rewrite_ttl": 43200,
+          "strategy": "ipv4_only"
+        }
+      },
+      {
+        "tag": "udp://8.8.8.8",
+        "type": "udp",
+        "server": "8.8.8.8",
+        "server_port": 53,
+        "domain_resolver": {
+          "server": "dns_resolver_out",
+          "rewrite_ttl": 43200,
+          "strategy": "ipv4_only"
+        }
+      },
+      {
+        "tag": "tls://223.5.5.5",
+        "type": "tls",
+        "server": "223.5.5.5",
+        "server_port": 853,
+        "domain_resolver": {
+          "server": "dns_resolver_out",
+          "rewrite_ttl": 43200,
+          "strategy": "ipv4_only"
+        }
+      },
+      {
+        "tag": "tls://223.6.6.6",
+        "type": "tls",
+        "server": "223.6.6.6",
+        "server_port": 853,
+        "domain_resolver": {
+          "server": "dns_resolver_out",
+          "rewrite_ttl": 43200,
+          "strategy": "ipv4_only"
+        }
+      },
+      {
+        "tag": "tls://8.8.8.8",
+        "type": "tls",
+        "server": "8.8.8.8",
+        "server_port": 853,
+        "domain_resolver": {
+          "server": "dns_resolver_out",
+          "rewrite_ttl": 43200,
+          "strategy": "ipv4_only"
+        }
+      },
+      {
+        "tag": "tls://8.8.4.4",
+        "type": "tls",
+        "server": "8.8.4.4",
+        "server_port": 853,
+        "domain_resolver": {
+          "server": "dns_resolver_out",
+          "rewrite_ttl": 43200,
+          "strategy": "ipv4_only"
+        }
+      },
+      {
+        "tag": "udp://45.8.248.123",
+        "type": "udp",
+        "server": "45.8.248.123",
+        "server_port": 53,
+        "domain_resolver": {
+          "server": "dns_resolver_out",
+          "rewrite_ttl": 43200,
+          "strategy": "ipv4_only"
+        }
+      },
+      {
+        "tag": "udp://223.5.5.5",
+        "type": "udp",
+        "server": "223.5.5.5",
+        "server_port": 53,
+        "domain_resolver": {
+          "server": "dns_resolver_out",
+          "rewrite_ttl": 43200,
+          "strategy": "ipv4_only"
+        }
+      },
+      {
+        "tag": "udp://223.6.6.6",
+        "type": "udp",
+        "server": "223.6.6.6",
+        "server_port": 53,
+        "domain_resolver": {
+          "server": "dns_resolver_out",
+          "rewrite_ttl": 43200,
+          "strategy": "ipv4_only"
+        }
+      },
+      {
+        "tag": "detour:udp://223.5.5.5",
+        "type": "udp",
+        "server": "223.5.5.5",
+        "server_port": 53,
+        "detour": "urltest_out",
+        "domain_resolver": {
+          "server": "dns_resolver_out",
+          "rewrite_ttl": 43200,
+          "strategy": "ipv4_only"
+        }
+      },
+      {
+        "tag": "detour:udp://223.6.6.6",
+        "type": "udp",
+        "server": "223.6.6.6",
+        "server_port": 53,
+        "detour": "urltest_out",
+        "domain_resolver": {
+          "server": "dns_resolver_out",
+          "rewrite_ttl": 43200,
+          "strategy": "ipv4_only"
+        }
+      },
+      {
+        "tag": "detour:udp://8.8.8.8",
+        "type": "udp",
+        "server": "8.8.8.8",
+        "server_port": 53,
+        "detour": "urltest_out",
+        "domain_resolver": {
+          "server": "dns_resolver_out",
+          "rewrite_ttl": 43200,
+          "strategy": "ipv4_only"
+        }
+      },
+      {
+        "tag": "detour:udp://8.8.4.4",
+        "type": "udp",
+        "server": "8.8.4.4",
+        "server_port": 53,
+        "detour": "urltest_out",
+        "domain_resolver": {
+          "server": "dns_resolver_out",
+          "rewrite_ttl": 43200,
+          "strategy": "ipv4_only"
+        }
+      },
+      {
+        "tag": "detour:udp://45.8.248.123",
+        "type": "udp",
+        "server": "45.8.248.123",
+        "server_port": 53,
+        "detour": "urltest_out",
+        "domain_resolver": {
+          "server": "dns_resolver_out",
+          "rewrite_ttl": 43200,
+          "strategy": "ipv4_only"
+        }
+      },
+      {
+        "tag": "dns_hosts_out",
+        "type": "hosts",
+        "predefined": {
+          "dashboard.onesignal.com": [
+            "104.17.111.223",
+            "104.16.160.145"
+          ],
+          "dns.google": [
+            "8.8.8.8",
+            "8.8.4.4",
+            "2001:4860:4860::8888",
+            "2001:4860:4860::8844"
+          ],
+          "one.one.one.one": [
+            "1.1.1.1",
+            "1.0.0.1",
+            "2606:4700:4700::1111",
+            "2606:4700:4700::1001"
+          ],
+          "1dot1dot1dot1.cloudflare-dns.com": [
+            "1.1.1.1",
+            "1.0.0.1",
+            "2606:4700:4700::1111",
+            "2606:4700:4700::1001"
+          ],
+          "cloudflare-dns.com": [
+            "104.16.249.249",
+            "104.16.248.249",
+            "2606:4700::6810:f8f9",
+            "2606:4700::6810:f9f9"
+          ],
+          "dns.cloudflare.com": [
+            "104.16.132.229",
+            "104.16.133.229",
+            "2606:4700::6810:84e5",
+            "2606:4700::6810:85e5"
+          ],
+          "dns.alidns.com": [
+            "223.5.5.5",
+            "223.6.6.6",
+            "2400:3200::1",
+            "2400:3200:baba::1"
+          ],
+          "dot.pub": [
+            "1.12.12.12",
+            "120.53.53.53"
+          ],
+          "doh.pub": [
+            "1.12.12.12",
+            "120.53.53.53"
+          ],
+          "dns.quad9.net": [
+            "9.9.9.9",
+            "149.112.112.112",
+            "2620:fe::fe",
+            "2620:fe::9"
+          ],
+          "dns.yandex.net": [
+            "77.88.8.8",
+            "77.88.8.1",
+            "2a02:6b8::feed:0ff",
+            "2a02:6b8:0:1::feed:0ff"
+          ],
+          "dns.sb": [
+            "185.222.222.222",
+            "2a09::"
+          ],
+          "engage.cloudflareclient.com": [
+            "162.159.192.1",
+            "2606:4700:d0::a29f:c001"
+          ],
+          "dns.adguard.com": [
+            "94.140.14.14",
+            "94.140.15.15",
+            "2a10:50c0::ad1:ff",
+            "2a10:50c0::ad2:ff"
+          ]
+        }
+      },
+      {
+        "tag": "dns_block_out",
+        "type": "predefined",
+        "rcode": "NOERROR"
+      },
+      {
+        "tag": "dns_outbound_out",
+        "type": "batch",
+        "servers": [
+          "local",
+          "dhcp://auto",
+          "udp://8.8.4.4",
+          "udp://8.8.8.8",
+          "tls://223.5.5.5",
+          "tls://223.6.6.6",
+          "tls://8.8.8.8",
+          "tls://8.8.4.4"
+        ]
+      },
+      {
+        "tag": "dns_direct_out",
+        "type": "batch",
+        "servers": [
+          "local",
+          "dhcp://auto",
+          "udp://8.8.8.8",
+          "udp://8.8.4.4",
+          "tls://8.8.8.8",
+          "tls://8.8.4.4",
+          "udp://45.8.248.123"
+        ]
+      },
+      {
+        "tag": "dns_proxy_out",
+        "type": "batch",
+        "servers": [
+          "detour:udp://223.5.5.5",
+          "detour:udp://223.6.6.6",
+          "detour:udp://8.8.8.8",
+          "detour:udp://8.8.4.4",
+          "detour:udp://45.8.248.123"
+        ]
+      },
+      {
+        "tag": "dns_resolver_out",
+        "type": "batch",
+        "servers": [
+          "local",
+          "dhcp://auto",
+          "udp://8.8.8.8",
+          "udp://8.8.4.4",
+          "tls://223.5.5.5",
+          "tls://223.6.6.6",
+          "tls://8.8.8.8",
+          "tls://8.8.4.4"
+        ]
+      },
+      {
+        "tag": "dns_fakeip_out",
+        "type": "fakeip",
+        "inet4_range": "198.20.0.0/15"
+      }
+    ],
+    "rules": [
+      {
+        "query_type": [
+          0,
+          "A",
+          "AAAA",
+          "NS",
+          "CNAME",
+          "TXT",
+          "MX"
+        ],
+        "invert": true,
+        "action": "reject",
+        "method": "default",
+        "name": "reject[dns]"
+      },
+      {
+        "domain_suffix": [
+          "o4508911573663744.ingest.sentry.io"
+        ],
+        "server": "dns_direct_out",
+        "client_subnet": "176.52.57.44",
+        "name": "dns_direct_out[karing][dns]",
+        "rewrite_ttl": 43200
+      },
+      {
+        "domain_suffix": [
+          "speedtest.net"
+        ],
+        "server": "dns_fakeip_out",
+        "name": "dns_fakeip_out[karing][dns]",
+        "rewrite_ttl": 1
+      },
+      {
+        "domain_suffix": [
+          "karing.app"
+        ],
+        "server": "dns_fakeip_out",
+        "name": "dns_fakeip_out[karing][dns]",
+        "rewrite_ttl": 1
+      },
+      {
+        "domain": [
+          "kaz.accessgate.link"
+        ],
+        "server": "dns_outbound_out",
+        "name": "dns_outbound_out[karing][dns]",
+        "rewrite_ttl": 43200
+      },
+      {
+        "domain": [
+          "dashboard.onesignal.com",
+          "dns.google",
+          "one.one.one.one",
+          "1dot1dot1dot1.cloudflare-dns.com",
+          "cloudflare-dns.com",
+          "dns.cloudflare.com",
+          "dns.alidns.com",
+          "dot.pub",
+          "doh.pub",
+          "dns.quad9.net",
+          "dns.yandex.net",
+          "dns.sb",
+          "engage.cloudflareclient.com",
+          "dns.adguard.com"
+        ],
+        "server": "dns_hosts_out",
+        "name": "hosts[karing][dns]",
+        "rewrite_ttl": 43200
+      },
+      {
+        "query_type": [
+          "A",
+          "AAAA"
+        ],
+        "action": "route",
+        "server": "dns_fakeip_out",
+        "rewrite_ttl": 1,
+        "disable_cache": true,
+        "name": "dns_fakeip_out[dns-fakeip]"
+      }
+    ],
+    "strategy": "ipv4_only",
+    "independent_cache": true,
+    "cache_capacity": 1024
+  },
+  "inbounds": [
+    {
+      "type": "mixed",
+      "tag": "mixed_in_direct",
+      "set_system_proxy": false,
+      "users": null,
+      "listen": "127.0.0.1",
+      "listen_port": 3065
+    },
+    {
+      "type": "mixed",
+      "tag": "mixed_in_proxy",
+      "set_system_proxy": false,
+      "users": null,
+      "listen": "127.0.0.1",
+      "listen_port": 3066
+    },
+    {
+      "type": "mixed",
+      "tag": "mixed_in_rule",
+      "set_system_proxy": false,
+      "users": null,
+      "listen": "127.0.0.1",
+      "listen_port": 3067
+    }
+  ],
+  "outbounds": [
+    {
+      "server": "kaz.accessgate.link",
+      "server_port": 443,
+      "tag": "Доступ%",
+      "type": "vless",
+      "uuid": "191d06fb-6128-44eb-8129-735471345691",
+      "flow": "xtls-rprx-vision",
+      "packet_encoding": "xudp",
+      "tls": {
+        "enabled": true,
+        "server_name": "yandexdatafactory.com",
+        "utls": {
+          "enabled": true,
+          "fingerprint": "chrome"
+        },
+        "reality": {
+          "enabled": true,
+          "public_key": "CQBmePak1QN5SsSmK_KTOSLjsCTaiaM4Jtxt7jLheko",
+          "short_id": "b0d8c9a285c70f6f"
+        }
+      },
+      "domain_resolver": {
+        "server": "dns_outbound_out",
+        "rewrite_ttl": 43200,
+        "strategy": "ipv4_only"
+      }
+    },
+    {
+      "type": "urltest",
+      "tag": "urltest_out",
+      "url": "http://www.msftconnecttest.com/connecttest.txt",
+      "interval": "1h",
+      "interrupt_exist_connections": false,
+      "selected_health_check_interval": "15s",
+      "retest_if_network_udpate": true,
+      "tolerance": 0,
+      "idle_timeout": "1h",
+      "outbounds": [
+        "Доступ%"
+      ]
+    },
+    {
+      "type": "direct",
+      "tag": "direct_out",
+      "domain_resolver": {
+        "server": "dns_direct_out",
+        "client_subnet": "176.52.57.44",
+        "rewrite_ttl": 43200,
+        "strategy": "ipv4_only"
+      }
+    },
+    {
+      "type": "block",
+      "tag": "block_out"
+    }
+  ],
+  "route": {
+    "final": "urltest_out",
+    "find_process": false,
+    "auto_detect_interface": false,
+    "default_domain_resolver": {
+      "server": "dns_outbound_out",
+      "rewrite_ttl": 43200,
+      "strategy": "ipv4_only"
+    },
+    "rules": [
+      {
+        "inbound": [
+          "mixed_in_rule"
+        ],
+        "action": "sniff"
+      },
+      {
+        "inbound": [
+          "mixed_in_direct"
+        ],
+        "action": "sniff"
+      },
+      {
+        "inbound": [
+          "mixed_in_proxy"
+        ],
+        "action": "sniff"
+      },
+      {
+        "inbound": [
+          "mixed_in_rule"
+        ],
+        "action": "resolve",
+        "strategy": "ipv4_only"
+      },
+      {
+        "inbound": [
+          "mixed_in_direct"
+        ],
+        "outbound": "direct_out",
+        "name": "direct[all]"
+      },
+      {
+        "inbound": [
+          "mixed_in_proxy"
+        ],
+        "outbound": "urltest_out",
+        "name": "proxy[all]"
+      },
+      {
+        "domain_suffix": [
+          "o4508911573663744.ingest.sentry.io"
+        ],
+        "outbound": "direct_out",
+        "name": "direct[karing]"
+      },
+      {
+        "domain_suffix": [
+          "speedtest.net"
+        ],
+        "outbound": "urltest_out",
+        "name": "current[karing]"
+      },
+      {
+        "domain_suffix": [
+          "karing.app"
+        ],
+        "outbound": "urltest_out",
+        "name": "current[karing]"
+      }
+    ],
+    "rule_set": []
+  }
+}
