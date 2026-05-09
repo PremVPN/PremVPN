@@ -8,7 +8,7 @@
 // - Минимум операций с KV
 // ==================================================================
 
-const BACKUP_URL = "https://github.com/PremVPN/PremVPN/raw/refs/heads/main/Karing_1.2.18.2102_ios_2026-05-02-1145.backup.zip";
+const BACKUP_URL = "https://github.com/PremVPN/PremVPN/raw/refs/heads/main/Karing_09_05.zip";
 
 const CONFIG = {
   BRAND_NAME: "PremVPN",
