@@ -2,7 +2,7 @@
 // 🔥 PREMVPN — ДОРАБОТАННАЯ ВЕРСИЯ
 // ==================================================================
 
-const BACKUP_URL = "https://github.com/PremVPN/PremVPN/raw/refs/heads/main/Karing_09_05.zip";
+const BACKUP_URL = "https://github.com/PremVPN/PremVPN/raw/refs/heads/main/Karing_1.2.18.2102_ios_2026-05-27-1237.backup.zip";
 
 const CONFIG = {
   BRAND_NAME: "PremVPN",
